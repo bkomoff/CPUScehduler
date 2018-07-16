@@ -1,6 +1,4 @@
-#include <vector>
-
-#include "ProcessControlBlock.h"
+#pragma once
 
 class ProcessControlBlock;
 
@@ -31,14 +29,15 @@ class ProcessQueue
         ProcessQueue();
 		~ProcessQueue();
 
-		void AddProcess( ProcessControlBlock &pcb );
+		void AddProcess( ProcessControlBlock *pcb );
+		void AddProcess( ProcessControlBlock *pcb, long existingProcessId );
 
-
-		void AddProcess( long processId );
-		void AddProcess( long existingProcessId, long processId );
 		void DeleteProcessFromQueue();
 		void DeleteProcessFromQueue( long processId );
+
 		void PrintQueue() const;
+
+		ProcessQueueNode const *GetHead() { return head; }
 
 		unsigned int Size() const { return counter; }  
 	
@@ -47,7 +46,7 @@ class ProcessQueue
 		ProcessQueueNode *tail;
 		unsigned int counter;
 
-		ProcessQueueNode *CreateQueueNode( ProcessControlBlock &pcb );
+		ProcessQueueNode *CreateQueueNode( ProcessControlBlock *pcb );
 
 		ProcessQueueNode *CreateQueueNode( long processId );
 		bool ComparePIDs( long processsId );

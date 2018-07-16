@@ -1,5 +1,6 @@
 #include <iostream>
 
+#include "ProcessControlBlock.h"
 #include "ProcessQueue.h"
 
 ProcessQueueNode::ProcessQueueNode():
@@ -18,12 +19,12 @@ ProcessQueue::~ProcessQueue()
 {  
 }
 
-ProcessQueueNode *ProcessQueue::CreateQueueNode( ProcessControlBlock &pcb )
+ProcessQueueNode *ProcessQueue::CreateQueueNode( ProcessControlBlock *pcb )
 {
     ProcessQueueNode *node = new ProcessQueueNode;  
     if ( node != nullptr )
     {
-        node->SetData( &pcb );
+        node->SetData( pcb );
         node->SetNext( nullptr );
         node->SetPrev( nullptr );
     }
@@ -36,7 +37,8 @@ ProcessQueueNode *ProcessQueue::CreateQueueNode( long processId )
     ProcessQueueNode *node = new ProcessQueueNode;  
     if ( node != nullptr )
     {
-        node->SetData( new ProcessControlBlock( processId ) );
+        ProcessControlBlock *pcb = new ProcessControlBlock(processId);
+        node->SetData( pcb );
         node->SetNext( nullptr );
         node->SetPrev( nullptr );
     }
@@ -63,10 +65,10 @@ bool ProcessQueue::ComparePIDs( long processId )
     return found;
 }
 
-void ProcessQueue::AddProcess( ProcessControlBlock &pcb )
+void ProcessQueue::AddProcess( ProcessControlBlock *pcb )
 {
     //Check to see if PID exists
-    bool exist = ComparePIDs( pcb.GetProcessId() );
+    bool exist = ComparePIDs( pcb->GetProcessId() );
 
     if ( !exist )
     {
@@ -92,44 +94,11 @@ void ProcessQueue::AddProcess( ProcessControlBlock &pcb )
     }
     else
     {
-        std::cout << pcb.GetProcessId() << " already exist" << std::endl;
+        std::cout << pcb->GetProcessId() << " already exist" << std::endl;
     }
 }
 
-void ProcessQueue::AddProcess( long processId )
-{
-    //Check to see if PID exists
-    bool exist = ComparePIDs( processId );
-
-    if ( !exist )
-    {
-        ProcessQueueNode *newNode = CreateQueueNode( processId );
-        if ( head == nullptr ) // empty list
-        {
-            this->head = newNode;
-        }
-        else if ( tail == nullptr ) // contains one item
-        {
-            this->tail = newNode;
-            newNode->SetPrev( this->head );
-            this->head->SetNext( this->tail );
-        }
-        else // more than one item in list add to end
-        {
-            newNode->SetPrev( this->tail );
-            this->tail->SetNext( newNode );
-            this->tail = newNode;
-        }
-        
-        counter++;
-    }
-    else
-    {
-        std::cout << processId << " already exist" << std::endl;
-    }
-}
-
-void ProcessQueue::AddProcess( long existingProcessId, long processId )
+void ProcessQueue::AddProcess( ProcessControlBlock *pcb, long existingProcessId )
 {
     if ( head == nullptr )
     {
@@ -138,7 +107,7 @@ void ProcessQueue::AddProcess( long existingProcessId, long processId )
     }
 
     //Check to see if PID exists
-    bool exist = ComparePIDs( processId );
+    bool exist = ComparePIDs( pcb->GetProcessId() );
 
     if ( !exist )
     {
@@ -152,7 +121,7 @@ void ProcessQueue::AddProcess( long existingProcessId, long processId )
             }
             else
             {
-                ProcessQueueNode *newNode = CreateQueueNode( processId );
+                ProcessQueueNode *newNode = CreateQueueNode( pcb->GetProcessId() );
                 if ( currentNode->GetNext() == nullptr )
                 {
                     this->tail = newNode;
@@ -164,7 +133,7 @@ void ProcessQueue::AddProcess( long existingProcessId, long processId )
                     newNode->SetPrev( currentNode );
                     newNode->SetNext( currentNode->GetNext() );
                     currentNode->SetNext( newNode );
-                    currentNode->GetNext()->SetPrev( newNode );
+                    newNode->GetNext()->SetPrev( newNode );
                 }
 
                 counter++;
@@ -174,8 +143,8 @@ void ProcessQueue::AddProcess( long existingProcessId, long processId )
     }
     else
     {
-        std::cout << processId << " already exist" << std::endl;
-    }
+        std::cout << pcb->GetProcessId() << " already exist" << std::endl;
+    }    
 }
 
 void ProcessQueue::DeleteProcessFromQueue()
@@ -201,10 +170,11 @@ void ProcessQueue::DeleteProcessFromQueue()
 }
 
 void ProcessQueue::DeleteProcessFromQueue( long processId )
-{    
+{   
     ProcessQueueNode *currentNode = head;
     int i = 0;
-    while ( i < counter )
+    bool done = false;
+    while ( i < counter && !done )
     {
         if ( currentNode->GetData()->GetProcessId() == processId )
         {
@@ -234,11 +204,20 @@ void ProcessQueue::DeleteProcessFromQueue( long processId )
                 prev->SetNext(next);
             }
             delete currentNode;
+            currentNode = nullptr;
             counter--;
+            done = true;
         }
+        else
+        {
+            currentNode = currentNode->GetNext();
+            i++;
+        }
+    }
 
-        currentNode = currentNode->GetNext();
-        i++;
+    if ( !done )
+    {
+        std::cout << "PID does not exist" << std::endl;
     }
 }
 

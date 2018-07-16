@@ -1,2 +1,2 @@
-scheduler: main.cpp ProcessControlBlock.cpp ProcessQueue.cpp
-	g++ -o main main.cpp ProcessControlBlock.cpp ProcessQueue.cpp -I.
+scheduler: main.cpp ProcessQueue.cpp FCFSScheduler.cpp
+	g++ -g -o main main.cpp ProcessQueue.cpp FCFSScheduler.cpp -I.
