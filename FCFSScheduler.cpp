@@ -72,7 +72,10 @@ void FCFSScheduler::Execute()
     }
 
 
-    std::cout << "PID" << std::setw(20) << "Burst Time"  << std::setw(20) << "Wait Time" << std::setw(20) << "Turnaround Time" << std::endl;
+    std::cout << "PID" << std::setw(20);
+    std::cout << "Burst Time" << std::setw(20);
+    std::cout << "Wait Time" << std::setw(20);
+    std::cout << "Turnaround Time" << std::endl;
 
     double averageWaitTime       = 0.0;
     double averageTurnAroundTime = 0.0;
