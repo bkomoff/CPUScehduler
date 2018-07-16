@@ -12,5 +12,8 @@ class FCFSScheduler
         void Execute();
 
     private:
+        bool ReadFile( std::string location );
+
+    private:
         ProcessQueue *ready;
 };

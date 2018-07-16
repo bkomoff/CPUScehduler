@@ -1,4 +1,7 @@
+#include <fstream>
+#include <iomanip>
 #include <iostream>
+#include <sstream>
 #include <vector>
 
 #include "ProcessControlBlock.h"
@@ -7,7 +10,7 @@
 #include "FCFSScheduler.h"
 
 FCFSScheduler::FCFSScheduler():
-    ready(nullptr)
+    ready(new ProcessQueue())
 {}
 
 FCFSScheduler::~FCFSScheduler()
@@ -18,18 +21,20 @@ FCFSScheduler::~FCFSScheduler()
 
 bool FCFSScheduler::Initialize( std::string location )
 {   
-    bool success = false;
+    bool success = ReadFile( location );
 
-    // Copy to ready queue
-    ProcessQueueNode const *currentNode = ready->GetHead();
-    while ( currentNode != nullptr )
+    if ( success )
     {
-        ProcessControlBlock *pcb = currentNode->GetData();
-        if ( pcb != nullptr )
+        ProcessQueueNode const *currentNode = ready->GetHead();
+        while ( currentNode != nullptr )
         {
-            pcb->SetProcessState( PCBTypes::ready_process );
+            ProcessControlBlock *pcb = currentNode->GetData();
+            if ( pcb != nullptr )
+            {
+                pcb->SetProcessState( PCBTypes::ready_process );
+            }
+            currentNode = currentNode->GetNext();
         }
-        currentNode = currentNode->GetNext();
     }
 
     return success;
@@ -62,21 +67,62 @@ void FCFSScheduler::Execute()
 
             turnAroundTime.push_back( pcb->GetBurstTime() + waitTime.at(i) );
         }
+        currentNode = currentNode->GetNext();
         i++;
     }
 
 
-    std::cout << "Process ID     " << "Burst Time     " << "Wait Time     " << "Turnaround Time" << std::endl;
+    std::cout << "PID" << std::setw(20) << "Burst Time"  << std::setw(20) << "Wait Time" << std::setw(20) << "Turnaround Time" << std::endl;
 
     double averageWaitTime       = 0.0;
     double averageTurnAroundTime = 0.0;
     for (int i = 0; i < processId.size(); i++ )
     {
-        std::cout << processId.at(i) << "     " << burstTime.at(i) << "     " << waitTime.at(i) << turnAroundTime.at(i) << std::endl;
+        std::cout << std::left << std::setw(20) << processId.at(i);
+        std::cout << std::left << std::setw(20) << burstTime.at(i);
+        std::cout << std::left << std::setw(20) << waitTime.at(i);
+        std::cout << std::left << std::setw(20) << turnAroundTime.at(i) << std::endl;
+
         averageWaitTime       += waitTime.at(i);
         averageTurnAroundTime += turnAroundTime.at(i);
     }
 
     std::cout << "Average Wait Time: " << averageWaitTime / processId.size() << std::endl;
     std::cout << "Average Turnaround Time: " << averageTurnAroundTime / processId.size() << std::endl;
+}
+
+bool FCFSScheduler::ReadFile( std::string location )
+{
+    bool success = false;
+
+    std::ifstream file;
+    file.open( location, std::ifstream::in );
+    if ( file.is_open() )
+    {
+        std::string line;
+        while ( getline( file, line ) )
+        {
+            std::stringstream linestream( line );
+            std::string       value;
+            int i = 0;
+            int number[4] = {0};
+
+            while ( getline( linestream, value, ',' ) )
+            {
+                number[i] = stoi(value);
+                i++;
+            }
+        
+            ProcessControlBlock *pcb = new ProcessControlBlock( number[0] );
+            pcb->SetArrivalTime( number[1] );
+            pcb->SetBurstTime( number[2] );
+            pcb->SetPriorty( number[3] );
+
+            ready->AddProcess( pcb );
+        }
+
+        success = true;
+    }
+
+    return success;
 }
