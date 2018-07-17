@@ -1,4 +1,5 @@
 #include <fstream>
+#include <list>
 #include <iomanip>
 #include <iostream>
 #include <sstream>
@@ -79,6 +80,7 @@ void FCFSScheduler::Execute()
 
     double averageWaitTime       = 0.0;
     double averageTurnAroundTime = 0.0;
+    
     for (int i = 0; i < processId.size(); i++ )
     {
         std::cout << std::left << std::setw(20) << processId.at(i);
@@ -98,6 +100,7 @@ bool FCFSScheduler::ReadFile( std::string location )
 {
     bool success = false;
 
+    std::list<ProcessControlBlock*> list;
     std::ifstream file;
     file.open( location, std::ifstream::in );
     if ( file.is_open() )
@@ -121,11 +124,22 @@ bool FCFSScheduler::ReadFile( std::string location )
             pcb->SetBurstTime( number[2] );
             pcb->SetPriorty( number[3] );
 
-            ready->AddProcess( pcb );
+            list.push_back( pcb );
         }
 
         success = true;
     }
 
+    if ( success )
+    {
+        // Sort Ready Queue by Priority
+        list.sort([]( ProcessControlBlock *lhs, ProcessControlBlock *rhs) { return lhs->GetPriorty() < rhs->GetPriorty(); } );
+
+        for ( auto pcb : list )
+        {
+            ready->AddProcess(pcb);
+        }
+    }
+    
     return success;
 }
