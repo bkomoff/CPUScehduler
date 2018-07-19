@@ -32,6 +32,8 @@ bool FCFSScheduler::Initialize( std::string location )
             if ( pcb != nullptr )
             {
                 pcb->SetProcessState( PCBTypes::ready_process );
+                processId.push_back(pcb->GetProcessId());
+                burstTime.push_back(pcb->GetBurstTime());
             }
             currentNode = currentNode->GetNext();
         }
@@ -135,8 +137,6 @@ bool FCFSScheduler::ReadFile( std::string location )
         for ( auto pcb : list )
         {
             ready->AddProcess(pcb);
-            processId.push_back(pcb->GetProcessId());
-            burstTime.push_back(pcb->GetBurstTime());
         }
     }
     

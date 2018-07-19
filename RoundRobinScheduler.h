@@ -16,10 +16,13 @@ class RoundRobinScheduler
     private:
         bool ReadFile( std::string location );
         void MoveProcess( ProcessControlBlock &pcb, size_t time );
+        void PrintGnattChart();
 
     private:
         const size_t timeQuantum;
         ProcessQueue *ready;
         std::vector<int> processId;
         std::vector<int> burstTime;
+        std::vector<int> arrivalTime;
+        std::vector<int> remainingTime;
 };

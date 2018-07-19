@@ -1,3 +1,4 @@
+#include <algorithm>
 #include <fstream>
 #include <list>
 #include <iomanip>
@@ -33,6 +34,10 @@ bool RoundRobinScheduler::Initialize( std::string location )
             if ( pcb != nullptr )
             {
                 pcb->SetProcessState( PCBTypes::ready_process );
+                processId.push_back( pcb->GetProcessId() );
+                burstTime.push_back( pcb->GetBurstTime() );
+                remainingTime.push_back( pcb->GetBurstTime() );
+                arrivalTime.push_back( pcb->GetArrivalTime() );
             }
             currentNode = currentNode->GetNext();
         }
@@ -46,24 +51,39 @@ void RoundRobinScheduler::Execute()
     std::vector<int> waitTime;
     std::vector<int> turnAroundTime;
 
+    // Grab first process in the queue
     ProcessQueueNode const *currentNode = ready->GetHead();
+
     int i = 0;
     int time = 0;
+    bool deleteProcess = false;
+
     while ( currentNode != nullptr )
     {
         ProcessControlBlock *pcb = currentNode->GetData();
-        size_t currentBurstTime = pcb->GetBurstTime(); 
-        if ( currentBurstTime > timeQuantum )
+        // Make sure we are using the correct PID
+        std::vector<int>::iterator it = std::find(processId.begin(), processId.end(), pcb->GetProcessId() );
+        
+        if ( remainingTime.at(i) > timeQuantum )
         {
             time += timeQuantum;
-            pcb->SetBurstTime( currentBurstTime - timeQuantum );
+            PrintGnattChart();
+            remainingTime.at(i) -= timeQuantum;
             MoveProcess( *pcb, time );
         }
         else
         {
+            // wait time = time - arrivalTime - burstTime
+            // turnaround time = time - arrivalTime
+            deleteProcess = true;
         }
 
         currentNode = currentNode->GetNext();
+        if ( deleteProcess )
+        {
+            ready->DeleteProcessFromQueue(pcb->GetProcessId());
+            deleteProcess = false;
+        }
         i++;
     }
 }
@@ -104,14 +124,12 @@ bool RoundRobinScheduler::ReadFile( std::string location )
 
     if ( success )
     {
-        // Sort Ready Queue by Priority
+        // Sort Ready Queue by ArrivalTime
         list.sort([]( ProcessControlBlock *lhs, ProcessControlBlock *rhs) { return lhs->GetArrivalTime() < rhs->GetArrivalTime(); } );
 
         for ( auto pcb : list )
         {
             ready->AddProcess(pcb);
-            processId.push_back( pcb->GetProcessId() );
-            burstTime.push_back( pcb->GetBurstTime() );
         }
     }
 
@@ -119,6 +137,11 @@ bool RoundRobinScheduler::ReadFile( std::string location )
 }
 
 void RoundRobinScheduler::MoveProcess( ProcessControlBlock &pcb, size_t time )
+{
+    
+}
+
+void RoundRobinScheduler::PrintGnattChart()
 {
 
 }
