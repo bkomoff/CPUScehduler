@@ -7,20 +7,21 @@
 #include "ProcessControlBlock.h"
 #include "ProcessQueue.h"
 
-#include "FCFSScheduler.h"
+#include "RoundRobinScheduler.h"
 
-FCFSScheduler::FCFSScheduler():
+RoundRobinScheduler::RoundRobinScheduler():
+    timeQuantum( 2 ),
     ready(new ProcessQueue())
 {}
 
-FCFSScheduler::~FCFSScheduler()
+RoundRobinScheduler::~RoundRobinScheduler()
 {
     delete ready;
     ready = nullptr;
 }
 
-bool FCFSScheduler::Initialize( std::string location )
-{   
+bool RoundRobinScheduler::Initialize( std::string location )
+{
     bool success = ReadFile( location );
 
     if ( success )
@@ -40,60 +41,34 @@ bool FCFSScheduler::Initialize( std::string location )
     return success;
 }
 
-void FCFSScheduler::Execute()
+void RoundRobinScheduler::Execute()
 {
     std::vector<int> waitTime;
     std::vector<int> turnAroundTime;
 
     ProcessQueueNode const *currentNode = ready->GetHead();
     int i = 0;
+    int time = 0;
     while ( currentNode != nullptr )
     {
         ProcessControlBlock *pcb = currentNode->GetData();
-        if ( pcb != nullptr )
+        size_t currentBurstTime = pcb->GetBurstTime(); 
+        if ( currentBurstTime > timeQuantum )
         {
-            if ( i == 0 )
-            {
-                waitTime.push_back(0);
-            }
-            else
-            {
-                waitTime.push_back( waitTime.at(i - 1) + pcb->GetBurstTime() );
-            }
-
-            turnAroundTime.push_back( pcb->GetBurstTime() + waitTime.at(i) );
+            time += timeQuantum;
+            pcb->SetBurstTime( currentBurstTime - timeQuantum );
+            MoveProcess( *pcb, time );
+        }
+        else
+        {
         }
 
         currentNode = currentNode->GetNext();
-        ready->DeleteProcessFromQueue( pcb->GetProcessId() );
         i++;
     }
-
-
-    std::cout << "PID" << std::setw(20);
-    std::cout << "Burst Time" << std::setw(20);
-    std::cout << "Wait Time" << std::setw(20);
-    std::cout << "Turnaround Time" << std::endl;
-
-    double averageWaitTime       = 0.0;
-    double averageTurnAroundTime = 0.0;
-    
-    for (int i = 0; i < processId.size(); i++ )
-    {
-        std::cout << std::left << std::setw(20) << processId.at(i);
-        std::cout << std::left << std::setw(20) << burstTime.at(i);
-        std::cout << std::left << std::setw(20) << waitTime.at(i);
-        std::cout << std::left << std::setw(20) << turnAroundTime.at(i) << std::endl;
-
-        averageWaitTime       += waitTime.at(i);
-        averageTurnAroundTime += turnAroundTime.at(i);
-    }
-
-    std::cout << "Average Wait Time: " << averageWaitTime / processId.size() << std::endl;
-    std::cout << "Average Turnaround Time: " << averageTurnAroundTime / processId.size() << std::endl;
 }
 
-bool FCFSScheduler::ReadFile( std::string location )
+bool RoundRobinScheduler::ReadFile( std::string location )
 {
     bool success = false;
 
@@ -130,15 +105,20 @@ bool FCFSScheduler::ReadFile( std::string location )
     if ( success )
     {
         // Sort Ready Queue by Priority
-        list.sort([]( ProcessControlBlock *lhs, ProcessControlBlock *rhs) { return lhs->GetPriorty() < rhs->GetPriorty(); } );
+        list.sort([]( ProcessControlBlock *lhs, ProcessControlBlock *rhs) { return lhs->GetArrivalTime() < rhs->GetArrivalTime(); } );
 
         for ( auto pcb : list )
         {
             ready->AddProcess(pcb);
-            processId.push_back(pcb->GetProcessId());
-            burstTime.push_back(pcb->GetBurstTime());
+            processId.push_back( pcb->GetProcessId() );
+            burstTime.push_back( pcb->GetBurstTime() );
         }
     }
-    
-    return success;
+
+    return success;    
+}
+
+void RoundRobinScheduler::MoveProcess( ProcessControlBlock &pcb, size_t time )
+{
+
 }

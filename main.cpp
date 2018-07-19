@@ -6,6 +6,7 @@
 #include "FCFSScheduler.h"
 #include "ProcessControlBlock.h"
 #include "ProcessQueue.h"
+#include "RoundRobinScheduler.h"
 
 int main()
 {
@@ -28,6 +29,7 @@ int main()
         std::string location;
         std::ifstream in;
         FCFSScheduler fcfs;
+        RoundRobinScheduler rr;
 
         switch ( choice )
         {
@@ -89,6 +91,11 @@ int main()
                 if ( fcfs.Initialize( location ) )
                 {
                     fcfs.Execute();
+                }
+
+                if ( rr.Initialize( location ) )
+                {
+                    rr.Execute();
                 }
             break;
 
