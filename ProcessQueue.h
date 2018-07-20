@@ -48,6 +48,5 @@ class ProcessQueue
 
 		ProcessQueueNode *CreateQueueNode( ProcessControlBlock *pcb );
 
-		ProcessQueueNode *CreateQueueNode( long processId );
 		bool ComparePIDs( long processsId );
 };

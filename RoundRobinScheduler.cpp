@@ -34,6 +34,8 @@ bool RoundRobinScheduler::Initialize( std::string location )
             if ( pcb != nullptr )
             {
                 pcb->SetProcessState( PCBTypes::ready_process );
+                waitTime.push_back(0);
+                turnAroundTime.push_back(0);
                 processId.push_back( pcb->GetProcessId() );
                 burstTime.push_back( pcb->GetBurstTime() );
                 remainingTime.push_back( pcb->GetBurstTime() );
@@ -48,44 +50,49 @@ bool RoundRobinScheduler::Initialize( std::string location )
 
 void RoundRobinScheduler::Execute()
 {
-    std::vector<int> waitTime;
-    std::vector<int> turnAroundTime;
-
     // Grab first process in the queue
     ProcessQueueNode const *currentNode = ready->GetHead();
 
-    int i = 0;
     int time = 0;
-    bool deleteProcess = false;
+    bool complete = false;
 
     while ( currentNode != nullptr )
     {
         ProcessControlBlock *pcb = currentNode->GetData();
+
         // Make sure we are using the correct PID
-        std::vector<int>::iterator it = std::find(processId.begin(), processId.end(), pcb->GetProcessId() );
-        
-        if ( remainingTime.at(i) > timeQuantum )
+        auto it = std::distance( processId.begin(), std::find(processId.begin(), processId.end(), pcb->GetProcessId() ) );
+
+        if ( remainingTime.at(it) > timeQuantum )
         {
             time += timeQuantum;
-            PrintGnattChart();
-            remainingTime.at(i) -= timeQuantum;
-            MoveProcess( *pcb, time );
+            remainingTime.at(it) -= timeQuantum;
+            MoveProcess( pcb, time );
         }
-        else
+        else if ( remainingTime.at(it) <= timeQuantum && remainingTime.at(it) > 0 )
         {
-            // wait time = time - arrivalTime - burstTime
-            // turnaround time = time - arrivalTime
-            deleteProcess = true;
+            time += remainingTime.at(it);
+            remainingTime.at(it) = 0;
+            complete = true;
         }
 
-        currentNode = currentNode->GetNext();
-        if ( deleteProcess )
+        if ( complete )
         {
-            ready->DeleteProcessFromQueue(pcb->GetProcessId());
-            deleteProcess = false;
+            // wait time = time - arrivalTime - burstTime
+            waitTime.at(it) = time - arrivalTime.at(it) - burstTime.at(it);
+
+            // turnaround time = time - arrivalTime
+            turnAroundTime.at(it) = time - arrivalTime.at(it);
+
+            ready->DeleteProcessFromQueue();
+            complete = false;
         }
-        i++;
+
+        currentNode = ready->GetHead();
+
     }
+
+    PrintOutput();
 }
 
 bool RoundRobinScheduler::ReadFile( std::string location )
@@ -136,12 +143,61 @@ bool RoundRobinScheduler::ReadFile( std::string location )
     return success;    
 }
 
-void RoundRobinScheduler::MoveProcess( ProcessControlBlock &pcb, size_t time )
+void RoundRobinScheduler::MoveProcess( ProcessControlBlock *pcb, size_t time )
 {
-    
+    ready->DeleteProcessFromQueue();
+
+    ProcessQueueNode const *currentNode = ready->GetHead();
+
+    bool done = false;
+    while ( currentNode != nullptr && !done )
+    {
+        if ( currentNode->GetData()->GetArrivalTime() > time )
+        {
+            ready->AddProcess( pcb, currentNode->GetPrev()->GetData()->GetProcessId() );
+            done = true;
+        }        
+
+        currentNode = currentNode->GetNext();
+    }
+
+    // Arrival time is now less than total time so start adding them to the tail
+    if ( !done )
+    {
+        ready->AddProcess( pcb );
+    }
 }
 
 void RoundRobinScheduler::PrintGnattChart()
 {
 
+}
+
+void RoundRobinScheduler::PrintOutput()
+{
+    std::cout << "" << std::endl;
+    std::cout << "Round Robin Results" << std::endl;
+    std::cout << "PID" << std::setw(20);
+    std::cout << "Arrival Time" << std::setw(20);
+    std::cout << "Burst Time" << std::setw(20);
+    std::cout << "Wait Time" << std::setw(20);
+    std::cout << "Turnaround Time" << std::endl;
+
+    double averageWaitTime       = 0.0;
+    double averageTurnAroundTime = 0.0;
+    
+    for (int i = 0; i < processId.size(); i++ )
+    {
+        std::cout << std::left << std::setw(20) << processId.at(i);
+        std::cout << std::left << std::setw(20) << arrivalTime.at(i);
+        std::cout << std::left << std::setw(20) << burstTime.at(i);
+        std::cout << std::left << std::setw(20) << waitTime.at(i);
+        std::cout << std::left << std::setw(20) << turnAroundTime.at(i) << std::endl;
+
+        averageWaitTime       += waitTime.at(i);
+        averageTurnAroundTime += turnAroundTime.at(i);
+    }
+
+    std::cout << "Average Wait Time: " << averageWaitTime / processId.size() << std::endl;
+    std::cout << "Average Turnaround Time: " << averageTurnAroundTime / processId.size() << std::endl;
 }

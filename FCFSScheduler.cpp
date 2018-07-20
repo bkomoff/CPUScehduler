@@ -33,6 +33,7 @@ bool FCFSScheduler::Initialize( std::string location )
             {
                 pcb->SetProcessState( PCBTypes::ready_process );
                 processId.push_back(pcb->GetProcessId());
+                priority.push_back( pcb->GetPriorty() );
                 burstTime.push_back(pcb->GetBurstTime());
             }
             currentNode = currentNode->GetNext();
@@ -44,9 +45,6 @@ bool FCFSScheduler::Initialize( std::string location )
 
 void FCFSScheduler::Execute()
 {
-    std::vector<int> waitTime;
-    std::vector<int> turnAroundTime;
-
     ProcessQueueNode const *currentNode = ready->GetHead();
     int i = 0;
     while ( currentNode != nullptr )
@@ -71,28 +69,7 @@ void FCFSScheduler::Execute()
         i++;
     }
 
-
-    std::cout << "PID" << std::setw(20);
-    std::cout << "Burst Time" << std::setw(20);
-    std::cout << "Wait Time" << std::setw(20);
-    std::cout << "Turnaround Time" << std::endl;
-
-    double averageWaitTime       = 0.0;
-    double averageTurnAroundTime = 0.0;
-    
-    for (int i = 0; i < processId.size(); i++ )
-    {
-        std::cout << std::left << std::setw(20) << processId.at(i);
-        std::cout << std::left << std::setw(20) << burstTime.at(i);
-        std::cout << std::left << std::setw(20) << waitTime.at(i);
-        std::cout << std::left << std::setw(20) << turnAroundTime.at(i) << std::endl;
-
-        averageWaitTime       += waitTime.at(i);
-        averageTurnAroundTime += turnAroundTime.at(i);
-    }
-
-    std::cout << "Average Wait Time: " << averageWaitTime / processId.size() << std::endl;
-    std::cout << "Average Turnaround Time: " << averageTurnAroundTime / processId.size() << std::endl;
+    PrintOutput();
 }
 
 bool FCFSScheduler::ReadFile( std::string location )
@@ -141,4 +118,33 @@ bool FCFSScheduler::ReadFile( std::string location )
     }
     
     return success;
+}
+
+void FCFSScheduler::PrintOutput()
+{
+    std::cout << "" << std::endl;
+    std::cout << "First Come First Serve Results" << std::endl;
+    std::cout << "PID" << std::setw(20);
+    std::cout << "Priority" << std::setw(20);
+    std::cout << "Burst Time" << std::setw(20);
+    std::cout << "Wait Time" << std::setw(20);
+    std::cout << "Turnaround Time" << std::endl;
+
+    double averageWaitTime       = 0.0;
+    double averageTurnAroundTime = 0.0;
+    
+    for (int i = 0; i < processId.size(); i++ )
+    {
+        std::cout << std::left << std::setw(20) << processId.at(i);
+        std::cout << std::left << std::setw(20) << priority.at(i);
+        std::cout << std::left << std::setw(20) << burstTime.at(i);
+        std::cout << std::left << std::setw(20) << waitTime.at(i);
+        std::cout << std::left << std::setw(20) << turnAroundTime.at(i) << std::endl;
+
+        averageWaitTime       += waitTime.at(i);
+        averageTurnAroundTime += turnAroundTime.at(i);
+    }
+
+    std::cout << "Average Wait Time: " << averageWaitTime / processId.size() << std::endl;
+    std::cout << "Average Turnaround Time: " << averageTurnAroundTime / processId.size() << std::endl;
 }

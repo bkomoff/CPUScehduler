@@ -32,20 +32,6 @@ ProcessQueueNode *ProcessQueue::CreateQueueNode( ProcessControlBlock *pcb )
     return node;    
 }
 
-ProcessQueueNode *ProcessQueue::CreateQueueNode( long processId )
-{
-    ProcessQueueNode *node = new ProcessQueueNode;  
-    if ( node != nullptr )
-    {
-        ProcessControlBlock *pcb = new ProcessControlBlock(processId);
-        node->SetData( pcb );
-        node->SetNext( nullptr );
-        node->SetPrev( nullptr );
-    }
-
-    return node;    
-}
-
 bool ProcessQueue::ComparePIDs( long processId )
 {
     bool found = false;
@@ -121,7 +107,7 @@ void ProcessQueue::AddProcess( ProcessControlBlock *pcb, long existingProcessId 
             }
             else
             {
-                ProcessQueueNode *newNode = CreateQueueNode( pcb->GetProcessId() );
+                ProcessQueueNode *newNode = CreateQueueNode( pcb );
                 if ( currentNode->GetNext() == nullptr )
                 {
                     this->tail = newNode;
