@@ -4,11 +4,11 @@
 
 class ProcessQueue;
 
-class FCFSScheduler
+class PriorityScheduler
 {
     public:
-        FCFSScheduler();
-        ~FCFSScheduler();
+        PriorityScheduler();
+        ~PriorityScheduler();
 
         bool Initialize( std::string location );
         void Execute();
@@ -25,8 +25,8 @@ class FCFSScheduler
         std::vector<int> waitTime;
         std::vector<int> turnAroundTime;
         std::vector<int> processId;
-        std::vector<int> priority;
         std::vector<int> arrivalTime;
+        std::vector<int> priority;
         std::vector<int> burstTime;
         double averageWaitTime;
         double averageTurnAroundTime;

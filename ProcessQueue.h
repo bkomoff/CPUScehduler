@@ -39,6 +39,8 @@ class ProcessQueue
 
 		ProcessQueueNode const *GetHead() { return head; }
 
+		ProcessControlBlock const *Get( size_t index );
+
 		unsigned int Size() const { return counter; }  
 	
     private:

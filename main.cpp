@@ -1,4 +1,5 @@
 #include <fstream>
+#include <iomanip>
 #include <iostream>
 #include <sstream>
 #include <string>
@@ -6,6 +7,7 @@
 #include "FCFSScheduler.h"
 #include "ProcessControlBlock.h"
 #include "ProcessQueue.h"
+#include "PriorityScheduler.h"
 #include "RoundRobinScheduler.h"
 
 int main()
@@ -29,6 +31,7 @@ int main()
         std::string location;
         std::ifstream in;
         FCFSScheduler fcfs;
+        PriorityScheduler priority;
         RoundRobinScheduler rr;
 
         switch ( choice )
@@ -93,10 +96,29 @@ int main()
                     fcfs.Execute();
                 }
 
+                if ( priority.Initialize( location ) )
+                {
+                    priority.Execute();
+                }
+
                 if ( rr.Initialize( location ) )
                 {
                     rr.Execute();
                 }
+                
+                std::cout << std::endl << std::endl;
+                std::cout << std::setw(30) << "Scheduler";
+                std::cout << std::setw(30) << "Average Turnaround Time";
+                std::cout << std::setw(30) << "Average Wait Time" << std::endl;
+                std::cout << std::left << std::setw(30) << "First Come First Serve";
+                std::cout << std::left << std::setw(30) << fcfs.GetAverageTurnAroundTime();
+                std::cout << std::left << std::setw(30) << fcfs.GetAverageWaitTime() << std::endl;
+                std::cout << std::left << std::setw(30) << "Priority";
+                std::cout << std::left << std::setw(30) << priority.GetAverageTurnAroundTime();
+                std::cout << std::left << std::setw(30) << priority.GetAverageWaitTime() << std::endl;
+                std::cout << std::left << std::setw(30) << "Round Robin";
+                std::cout << std::left << std::setw(30) << rr.GetAverageTurnAroundTime();
+                std::cout << std::left << std::setw(30) << rr.GetAverageWaitTime() << std::endl << std::endl << std::endl;
             break;
 
             case 5:

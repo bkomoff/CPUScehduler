@@ -220,3 +220,22 @@ void ProcessQueue::PrintQueue() const
     }
     std::cout << std::endl;
 }
+
+ProcessControlBlock const *ProcessQueue::Get( size_t index )
+{
+    ProcessControlBlock const *pcb = nullptr;
+
+    ProcessQueueNode const *currentNode = this->GetHead();
+    for ( size_t i = 0; i < Size(); i++ )
+    {
+        if ( i == index )
+        {
+            pcb = currentNode->GetData();
+            break;
+        }
+
+        currentNode = currentNode->GetNext();
+    }
+    
+    return pcb;
+}

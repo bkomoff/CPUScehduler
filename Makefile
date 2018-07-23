@@ -1,2 +1,2 @@
-scheduler: main.cpp ProcessQueue.cpp FCFSScheduler.cpp RoundRobinScheduler.cpp
-	g++ -g -o main main.cpp ProcessQueue.cpp FCFSScheduler.cpp RoundRobinScheduler.cpp -I.
+scheduler: main.cpp ProcessQueue.cpp FCFSScheduler.cpp PriorityScheduler.cpp RoundRobinScheduler.cpp
+	g++ -o scheduler main.cpp ProcessQueue.cpp FCFSScheduler.cpp PriorityScheduler.cpp RoundRobinScheduler.cpp -I.

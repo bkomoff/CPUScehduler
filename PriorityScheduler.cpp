@@ -1,3 +1,4 @@
+#include <algorithm>
 #include <fstream>
 #include <list>
 #include <iomanip>
@@ -7,22 +8,22 @@
 #include "ProcessControlBlock.h"
 #include "ProcessQueue.h"
 
-#include "FCFSScheduler.h"
+#include "PriorityScheduler.h"
 
-FCFSScheduler::FCFSScheduler():
+PriorityScheduler::PriorityScheduler():
     ready(new ProcessQueue()),
     averageWaitTime(0.0),
     averageTurnAroundTime(0.0)
 {}
 
-FCFSScheduler::~FCFSScheduler()
+PriorityScheduler::~PriorityScheduler()
 {
     delete ready;
     ready = nullptr;
 }
 
-bool FCFSScheduler::Initialize( std::string location )
-{   
+bool PriorityScheduler::Initialize( std::string location )
+{
     bool success = ReadFile( location );
 
     if ( success )
@@ -33,12 +34,15 @@ bool FCFSScheduler::Initialize( std::string location )
             ProcessControlBlock *pcb = currentNode->GetData();
             if ( pcb != nullptr )
             {
-                pcb->SetProcessState( PCBTypes::ready_process );
-                processId.push_back(pcb->GetProcessId());
+                pcb->SetProcessState( PCBTypes::ready_process );                
+                processId.push_back( pcb->GetProcessId() );
                 arrivalTime.push_back( pcb->GetArrivalTime() );
-                burstTime.push_back(pcb->GetBurstTime());
                 priority.push_back( pcb->GetPriorty() );
+                burstTime.push_back( pcb->GetBurstTime() );
+                waitTime.push_back(0);
+                turnAroundTime.push_back(0);
             }
+
             currentNode = currentNode->GetNext();
         }
     }
@@ -46,34 +50,47 @@ bool FCFSScheduler::Initialize( std::string location )
     return success;
 }
 
-void FCFSScheduler::Execute()
+void PriorityScheduler::Execute()
 {
-    ProcessQueueNode const *currentNode = ready->GetHead();
     int time = 0;
-    std::cout << "" << std::endl;
-    std::cout << "First Come First Serve Results" << std::endl;
-    std::cout << "Gnatt Chart" << std::endl;
-    while ( currentNode != nullptr )
-    {
-        ProcessControlBlock *pcb = currentNode->GetData();
-        if ( pcb != nullptr )
-        {
-            waitTime.push_back( time - pcb->GetArrivalTime() );
-            // turnAroundTime.push_back( ( time + pcb->GetBurstTime() ) - pcb->GetArrivalTime() );
-            turnAroundTime.push_back( (time - pcb->GetArrivalTime() ) + pcb->GetBurstTime() );
-        }
-        
-        PrintGnattChart( pcb->GetProcessId(), time );
 
-        time += pcb->GetBurstTime();
-        ready->DeleteProcessFromQueue();
-        currentNode = ready->GetHead();
+    std::cout << "" << std::endl;
+    std::cout << "Priority Scheduler (1 is highest priority)" << std::endl;
+    std::cout << "Gnatt Chart" << std::endl;
+    while ( ready->Size() > 0 )
+    {
+        //Check which PCB has the highest priority in this time frame 
+        std::list<const ProcessControlBlock*> priorityQueue;
+        for ( size_t i  = 0; i < ready->Size(); i++ )
+        {
+            if ( ready->Get( i )->GetArrivalTime() <= time )
+            {
+                priorityQueue.push_back( ready->Get( i ) );
+            }
+        }      
+
+        // Now sort based on priority
+        priorityQueue.sort([]( const ProcessControlBlock *lhs, const ProcessControlBlock *rhs) { return lhs->GetPriorty() > rhs->GetPriorty(); } );
+
+        for (auto pcb : priorityQueue )
+        {
+            // Make sure we are using the correct PID
+            auto it = std::distance( processId.begin(), std::find(processId.begin(), processId.end(), pcb->GetProcessId() ) );
+            
+            waitTime.at(it) = time - arrivalTime.at(it);
+            turnAroundTime.at(it) = ( time - arrivalTime.at(it) ) + burstTime.at(it);
+
+            PrintGnattChart( pcb->GetProcessId(), time );
+            time += pcb->GetBurstTime();
+            ready->DeleteProcessFromQueue( pcb->GetProcessId() );
+        }
     }
+
     std::cout << time << std::endl;
     PrintOutput();
 }
 
-bool FCFSScheduler::ReadFile( std::string location )
+bool PriorityScheduler::ReadFile( std::string location )
 {
     bool success = false;
 
@@ -121,23 +138,23 @@ bool FCFSScheduler::ReadFile( std::string location )
     return success;
 }
 
-void FCFSScheduler::PrintOutput()
+void PriorityScheduler::PrintOutput()
 {
-    std::cout << "PID" << std::setw(20);
-    std::cout << "Arrival Time" << std::setw(20);
-    std::cout << "Burst Time" << std::setw(20);
-    std::cout << "Priority" << std::setw(20);
-    std::cout << "Wait Time" << std::setw(20);
-    std::cout << "Turnaround Time"<< std::setw(20) << std::endl;
-    
+    std::cout << std::setw(15) << "PID";
+    std::cout << std::setw(15) << "Arrival Time";
+    std::cout << std::setw(15) << "Burst Time";
+    std::cout << std::setw(15) << "Priority";
+    std::cout << std::setw(15) << "Wait Time";
+    std::cout << std::setw(15) << "Turnaround Time" << std::endl;
+
     for (int i = 0; i < processId.size(); i++ )
     {
-        std::cout << std::left << std::setw(20) << processId.at(i);
-        std::cout << std::left << std::setw(20) << arrivalTime.at(i);
-        std::cout << std::left << std::setw(20) << burstTime.at(i);
-        std::cout << std::left << std::setw(20) << priority.at(i);
-        std::cout << std::left << std::setw(20) << waitTime.at(i);
-        std::cout << std::left << std::setw(20) << turnAroundTime.at(i) << std::endl;
+        std::cout << std::left << std::setw(15) << processId.at(i);
+        std::cout << std::left << std::setw(15) << arrivalTime.at(i);
+        std::cout << std::left << std::setw(15) << burstTime.at(i);
+        std::cout << std::left << std::setw(15) << priority.at(i);
+        std::cout << std::left << std::setw(15) << waitTime.at(i);
+        std::cout << std::left << std::setw(15) << turnAroundTime.at(i) << std::endl;
 
         averageWaitTime       += waitTime.at(i);
         averageTurnAroundTime += turnAroundTime.at(i);
@@ -150,7 +167,7 @@ void FCFSScheduler::PrintOutput()
     std::cout << "Average Turnaround Time: " << averageTurnAroundTime << std::endl;
 }
 
-void FCFSScheduler::PrintGnattChart( long processId, size_t time )
+void PriorityScheduler::PrintGnattChart( long processId, size_t time )
 {
     std::cout << time << "<--" << processId << "-->"; 
 }
