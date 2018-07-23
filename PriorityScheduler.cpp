@@ -84,9 +84,11 @@ void PriorityScheduler::Execute()
             time += pcb->GetBurstTime();
             ready->DeleteProcessFromQueue( pcb->GetProcessId() );
         }
+
+        priorityQueue.clear();
     }
 
-    std::cout << time << std::endl;
+    std::cout << time << std::endl << std::endl << std::endl;
     PrintOutput();
 }
 

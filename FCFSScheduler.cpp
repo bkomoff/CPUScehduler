@@ -69,7 +69,7 @@ void FCFSScheduler::Execute()
         ready->DeleteProcessFromQueue();
         currentNode = ready->GetHead();
     }
-    std::cout << time << std::endl;
+    std::cout << time << std::endl << std::endl << std::endl;
     PrintOutput();
 }
 

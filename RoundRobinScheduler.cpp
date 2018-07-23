@@ -126,7 +126,7 @@ void RoundRobinScheduler::Execute()
 
     }
 
-    std::cout << time << std::endl;
+    std::cout << time << std::endl << std::endl << std::endl;
 
     PrintOutput();
 }
